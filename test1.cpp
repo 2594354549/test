@@ -408,7 +408,7 @@ void MyFrame::UpdateCanvas() {
             dc.DrawCircle(m_startPoint.x, m_startPoint.y, radius);
         }
         else if (m_drawLine) {
-            dc.DrawLine(m_startPoint.x, m_startPoint.y, m_endPoint.x, m_endPoint.y);
+            dc.DrawSpline(m_startPoint.x, m_startPoint.y, m_startPoint.x + 50, m_startPoint.y + 50, m_startPoint.x, m_startPoint.y + 100);
         }
         else if (m_drawRectangle) {
             dc.DrawRectangle(m_startPoint.x, m_startPoint.y,
@@ -421,6 +421,8 @@ void MyFrame::UpdateCanvas() {
 }
 
 void MyFrame::DrawShapes(wxMemoryDC& dc) {
+
+
     dc.SetBrush(wxBrush(wxColor(0, 0, 255)));
     dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
 
@@ -430,12 +432,21 @@ void MyFrame::DrawShapes(wxMemoryDC& dc) {
             dc.DrawCircle(shape.start.x, shape.start.y, radius);
         }
         else if (shape.isRectangle) {
-            dc.DrawRectangle(shape.start.x, shape.start.y,
-                shape.end.x - shape.start.x,
-                shape.end.y - shape.start.y);
+            dc.DrawLine(shape.start.x - 15, shape.start.y + 25, shape.start.x, shape.start.y + 25);
+            dc.DrawLine(shape.start.x, shape.start.y, shape.start.x + 50, shape.start.y + 25);
+            dc.DrawLine(shape.start.x, shape.start.y + 50, shape.start.x + 50, shape.start.y + 25);
+            dc.DrawLine(shape.start.x, shape.start.y, shape.start.x, shape.start.y + 50);
+            dc.DrawLine(shape.start.x + 50, shape.start.y + 25, shape.start.x + 70, shape.start.y + 25);
         }
         else {
-            dc.DrawLine(shape.start.x, shape.start.y, shape.end.x, shape.end.y);
+            dc.DrawLine(shape.start.x - 15, shape.start.y + 20, shape.start.x, shape.start.y + 20);
+            dc.DrawLine(shape.start.x - 15, shape.start.y + 30, shape.start.x, shape.start.y + 30);
+            dc.DrawLine(shape.start.x, shape.start.y, shape.start.x, shape.start.y + 50);
+            dc.DrawLine(shape.start.x, shape.start.y, shape.start.x + 60, shape.start.y);
+            dc.DrawLine(shape.start.x, shape.start.y + 50, shape.start.x + 60, shape.start.y + 50);
+            dc.DrawSpline(shape.start.x + 60, shape.start.y, shape.start.x + 75, shape.start.y + 25, shape.start.x + 60, shape.start.y + 50);
+            dc.DrawLine(shape.start.x + 75, shape.start.y + 25, shape.start.x + 90, shape.start.y + 25);
+
         }
     }
 }
