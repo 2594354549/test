@@ -36,6 +36,7 @@ private:
     void OnDrawRectangle(wxCommandEvent& event);
     void OnDrawCircle(wxCommandEvent& event);
     void OnDrawLine(wxCommandEvent& event);
+    void Onlianxian(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnQuit(wxCommandEvent& event);
@@ -57,12 +58,14 @@ private:
     bool m_drawCircle;
     bool m_drawLine;
     bool m_drawRectangle;
+    bool m_lianxian;
 
     struct Shape {
         wxPoint start;
         wxPoint end;
         bool isCircle;
         bool isRectangle;
+        bool islianxian;
     };
 
     std::vector<Shape> m_shapes;
@@ -175,6 +178,7 @@ EVT_MENU(1005, MyFrame::OnDrawRectangle)
 EVT_MENU(1006, MyFrame::OnDrawCircle)
 EVT_MENU(1007, MyFrame::OnDrawLine)
 EVT_MENU(1008, MyFrame::OnUndo)
+EVT_MENU(1009, MyFrame::Onlianxian)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 EVT_MENU(wxID_EXIT, MyFrame::OnQuit)
 EVT_PAINT(MyFrame::OnPaint)
@@ -232,6 +236,7 @@ MyFrame::MyFrame(const wxString& title)
     toolbar->AddTool(1006, "Draw Circle", wxArtProvider::GetBitmap(wxART_GO_DOWN));
     toolbar->AddTool(1007, "Draw Line", wxArtProvider::GetBitmap(wxART_TIP));
     toolbar->AddTool(1008, "Undo", wxArtProvider::GetBitmap(wxART_UNDO));
+    toolbar->AddTool(1009, "lianxian", wxArtProvider::GetBitmap(wxART_TIP));
     toolbar->Realize();
 
     wxMenu* menuFile = new wxMenu;
@@ -243,6 +248,7 @@ MyFrame::MyFrame(const wxString& title)
     menuFile->Append(1006, "Draw Circle\tCtrl-C", "Draw a circle on the canvas");
     menuFile->Append(1007, "Draw Line\tCtrl-L", "Draw a line on the canvas");
     menuFile->Append(1008, "Undo\tCtrl-Z", "Undo the last drawing operation");
+    menuFile->Append(1009, "Draw Line\tCtrl-K", "lianxian on the canvas");
     menuFile->Append(wxID_EXIT, "Exit\tCtrl-Q", "Close the application");
 
     wxMenu* menuHelp = new wxMenu;
@@ -319,6 +325,7 @@ void MyFrame::OnDrawRectangle(wxCommandEvent& event) {
     m_drawRectangle = true;
     m_drawCircle = false;
     m_drawLine = false;
+    m_lianxian = false;
     wxMessageBox("Click and drag to draw a rectangle on the canvas.", "Draw Rectangle", wxOK | wxICON_INFORMATION);
 }
 
@@ -326,6 +333,7 @@ void MyFrame::OnDrawCircle(wxCommandEvent& event) {
     m_drawCircle = true;
     m_drawLine = false;
     m_drawRectangle = false;
+    m_lianxian = false;
     wxMessageBox("Click and drag to draw a circle on the canvas.", "Draw Circle", wxOK | wxICON_INFORMATION);
 }
 
@@ -333,9 +341,17 @@ void MyFrame::OnDrawLine(wxCommandEvent& event) {
     m_drawLine = true;
     m_drawCircle = false;
     m_drawRectangle = false;
+    m_lianxian = false;
     wxMessageBox("Click to set start and end points for the line.", "Draw Line", wxOK | wxICON_INFORMATION);
 }
 
+void MyFrame::OnDrawLine(wxCommandEvent& event) {
+    m_drawLine = false;
+    m_drawCircle = false;
+    m_drawRectangle = false;
+    m_lianxian = true;
+    wxMessageBox("Click to set start and end points for the line.", "Draw Line", wxOK | wxICON_INFORMATION);
+}
 void MyFrame::OnUndo(wxCommandEvent& event) {
     if (!m_shapes.empty()) {
         m_shapes.pop_back();
@@ -380,6 +396,7 @@ void MyFrame::OnMouseUp(wxMouseEvent& event) {
         if (m_drawLine) {
             shape.isCircle = false;
             shape.isRectangle = false;
+            shape.islianxian = false;
         }
 
         m_shapes.push_back(shape);
@@ -428,39 +445,42 @@ void MyFrame::DrawShapes(wxMemoryDC& dc) {
 
     for (const auto& shape : m_shapes) {
         if (shape.isCircle) {
-            dc.DrawArc(shape.start.x, shape.start.y + 25, shape.start.x, shape.start.y - 25, shape.start.x - 10, shape.start.y);
-            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 60, shape.start.y + 25);
-            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 60, shape.start.y - 25);
-            dc.DrawArc(shape.start.x + 60, shape.start.y + 25, shape.start.x + 60, shape.start.y - 25, shape.start.x + 50, shape.start.y);
+            dc.DrawArc(shape.start.x, shape.start.y + 57, shape.start.x, shape.start.y + 7, shape.start.x - 10, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 57, shape.start.x + 60, shape.start.y + 57);
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x + 60, shape.start.y + 7);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 57, shape.start.x + 60, shape.start.y + 7, shape.start.x + 50, shape.start.y + 32);
             dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
-            dc.DrawCircle(shape.start.x + 74, shape.start.y, 2);
-            dc.DrawCircle(shape.start.x + 14, shape.start.y + 10, 2);
-            dc.DrawCircle(shape.start.x + 14, shape.start.y - 10, 2);
+            dc.DrawCircle(shape.start.x + 74, shape.start.y + 32, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y + 42, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y + 22, 2);
             dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
         else if (shape.isRectangle) {
 
-            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 50, shape.start.y);
-            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 50, shape.start.y);
-            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x, shape.start.y + 25);
-            dc.DrawCircle(shape.start.x + 55, shape.start.y, 5);
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x + 50, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 57, shape.start.x + 50, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x, shape.start.y + 57);
+            dc.DrawCircle(shape.start.x + 55, shape.start.y + 32, 5);
             dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
-            dc.DrawCircle(shape.start.x + 60, shape.start.y, 2);
-            dc.DrawCircle(shape.start.x, shape.start.y + 10, 2);
-            dc.DrawCircle(shape.start.x, shape.start.y - 10, 2);
+            dc.DrawCircle(shape.start.x + 60, shape.start.y + 32, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 42, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 22, 2);
             dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
 
         }
+        else if (shape.islianxian) {
+            dc.DrawLine(shape.start.x, shape.start.y, shape.end.x, shape.end.y);
+        }
         else {
 
-            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x, shape.start.y + 25);
-            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 60, shape.start.y - 25);
-            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 60, shape.start.y + 25);
-            dc.DrawArc(shape.start.x + 60, shape.start.y + 25, shape.start.x + 60, shape.start.y - 25, shape.start.x + 50, shape.start.y);
+            dc.DrawLine(shape.start.x, shape.start.y + 10, shape.start.x, shape.start.y + 60);
+            dc.DrawLine(shape.start.x, shape.start.y + 10, shape.start.x + 60, shape.start.y + 10);
+            dc.DrawLine(shape.start.x, shape.start.y + 60, shape.start.x + 60, shape.start.y + 60);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 60, shape.start.x + 60, shape.start.y + 10, shape.start.x + 50, shape.start.y + 35);
             dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
-            dc.DrawCircle(shape.start.x + 74, shape.start.y, 2);
-            dc.DrawCircle(shape.start.x, shape.start.y + 10, 2);
-            dc.DrawCircle(shape.start.x, shape.start.y - 10, 2);
+            dc.DrawCircle(shape.start.x + 74, shape.start.y + 35, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 45, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 25, 2);
             dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
     }
