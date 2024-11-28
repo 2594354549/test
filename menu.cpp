@@ -408,7 +408,7 @@ void MyFrame::UpdateCanvas() {
             dc.DrawCircle(m_startPoint.x, m_startPoint.y, radius);
         }
         else if (m_drawLine) {
-            dc.DrawLine(m_startPoint.x, m_startPoint.y, m_endPoint.x, m_endPoint.y);
+            dc.DrawSpline(m_startPoint.x, m_startPoint.y, m_startPoint.x + 50, m_startPoint.y + 50, m_startPoint.x, m_startPoint.y + 100);
         }
         else if (m_drawRectangle) {
             dc.DrawRectangle(m_startPoint.x, m_startPoint.y,
@@ -421,21 +421,47 @@ void MyFrame::UpdateCanvas() {
 }
 
 void MyFrame::DrawShapes(wxMemoryDC& dc) {
-    dc.SetBrush(wxBrush(wxColor(0, 0, 255)));
+
+
+    dc.SetBrush(wxBrush(wxColor(0, 0, 0), wxBRUSHSTYLE_TRANSPARENT));
     dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
 
     for (const auto& shape : m_shapes) {
         if (shape.isCircle) {
-            int radius = static_cast<int>(sqrt(pow(shape.end.x - shape.start.x, 2) + pow(shape.end.y - shape.start.y, 2)));
-            dc.DrawCircle(shape.start.x, shape.start.y, radius);
+            dc.DrawArc(shape.start.x, shape.start.y + 25, shape.start.x, shape.start.y - 25, shape.start.x - 10, shape.start.y);
+            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 60, shape.start.y + 25);
+            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 60, shape.start.y - 25);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 25, shape.start.x + 60, shape.start.y - 25, shape.start.x + 50, shape.start.y);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 74, shape.start.y, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y + 10, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y - 10, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
         else if (shape.isRectangle) {
-            dc.DrawRectangle(shape.start.x, shape.start.y,
-                shape.end.x - shape.start.x,
-                shape.end.y - shape.start.y);
+
+            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 50, shape.start.y);
+            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 50, shape.start.y);
+            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x, shape.start.y + 25);
+            dc.DrawCircle(shape.start.x + 55, shape.start.y, 5);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 60, shape.start.y, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 10, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y - 10, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
+
         }
         else {
-            dc.DrawLine(shape.start.x, shape.start.y, shape.end.x, shape.end.y);
+
+            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x, shape.start.y + 25);
+            dc.DrawLine(shape.start.x, shape.start.y - 25, shape.start.x + 60, shape.start.y - 25);
+            dc.DrawLine(shape.start.x, shape.start.y + 25, shape.start.x + 60, shape.start.y + 25);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 25, shape.start.x + 60, shape.start.y - 25, shape.start.x + 50, shape.start.y);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 74, shape.start.y, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 10, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y - 10, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
     }
 }

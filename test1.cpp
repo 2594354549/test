@@ -33,9 +33,10 @@ private:
     void OnSave(wxCommandEvent& event);
     void OnExportPDF(wxCommandEvent& event);
     void OnClearCanvas(wxCommandEvent& event);
-    void OnDrawRectangle(wxCommandEvent& event);
-    void OnDrawCircle(wxCommandEvent& event);
-    void OnDrawLine(wxCommandEvent& event);
+    void OnDrawNOT(wxCommandEvent& event);
+    void OnDrawOR(wxCommandEvent& event);
+    void OnDrawAND(wxCommandEvent& event);
+    void Onlianxian(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnQuit(wxCommandEvent& event);
@@ -54,15 +55,17 @@ private:
     wxPoint m_startPoint;
     wxPoint m_endPoint;
     bool m_drawing;
-    bool m_drawCircle;
-    bool m_drawLine;
-    bool m_drawRectangle;
+    bool m_drawOR;
+    bool m_drawAND;
+    bool m_drawNOT;
+    bool m_lianxian;
 
     struct Shape {
         wxPoint start;
         wxPoint end;
-        bool isCircle;
-        bool isRectangle;
+        bool isOR;
+        bool isNOT;
+        bool islianxian;
     };
 
     std::vector<Shape> m_shapes;
@@ -171,10 +174,11 @@ EVT_MENU(1001, MyFrame::OnImportCAD)
 EVT_MENU(1002, MyFrame::OnSave)
 EVT_MENU(1003, MyFrame::OnExportPDF)
 EVT_MENU(1004, MyFrame::OnClearCanvas)
-EVT_MENU(1005, MyFrame::OnDrawRectangle)
-EVT_MENU(1006, MyFrame::OnDrawCircle)
-EVT_MENU(1007, MyFrame::OnDrawLine)
+EVT_MENU(1005, MyFrame::OnDrawNOT)
+EVT_MENU(1006, MyFrame::OnDrawOR)
+EVT_MENU(1007, MyFrame::OnDrawAND)
 EVT_MENU(1008, MyFrame::OnUndo)
+EVT_MENU(1009, MyFrame::Onlianxian)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 EVT_MENU(wxID_EXIT, MyFrame::OnQuit)
 EVT_PAINT(MyFrame::OnPaint)
@@ -210,7 +214,7 @@ wxIMPLEMENT_APP(MyApp);
 
 //tittle命名
 bool MyApp::OnInit() {
-    MyFrame* frame = new MyFrame("genshin");
+    MyFrame* frame = new MyFrame("CAD");
     wxInitAllImageHandlers();
     frame->Show(true);
     return true;
@@ -221,29 +225,31 @@ bool MyApp::OnInit() {
 #pragma region MyFrame有关方法实现
 
 MyFrame::MyFrame(const wxString& title)
-    : wxFrame(NULL, wxID_ANY, title), m_canvas(1200, 800), m_drawing(false), m_drawCircle(false), m_drawLine(false), m_drawRectangle(false) {
+    : wxFrame(NULL, wxID_ANY, title), m_canvas(1200, 800), m_drawing(false), m_drawOR(false), m_drawAND(false), m_drawNOT(false) {
 
     wxToolBar* toolbar = CreateToolBar();
-    toolbar->AddTool(1001, "Import CAD", wxArtProvider::GetBitmap(wxART_FILE_OPEN));
-    toolbar->AddTool(1002, "Save", wxArtProvider::GetBitmap(wxART_FILE_SAVE));
-    toolbar->AddTool(1003, "Export to PDF", wxArtProvider::GetBitmap(wxART_FILE_SAVE_AS));
-    toolbar->AddTool(1004, "Clear Canvas", wxArtProvider::GetBitmap(wxART_DELETE));
-    toolbar->AddTool(1005, "Draw Rectangle", wxArtProvider::GetBitmap(wxART_TIP));
-    toolbar->AddTool(1006, "Draw Circle", wxArtProvider::GetBitmap(wxART_GO_DOWN));
-    toolbar->AddTool(1007, "Draw Line", wxArtProvider::GetBitmap(wxART_TIP));
-    toolbar->AddTool(1008, "Undo", wxArtProvider::GetBitmap(wxART_UNDO));
+    toolbar->AddTool(1001, "导出成CAD", wxArtProvider::GetBitmap(wxART_FILE_OPEN));
+    toolbar->AddTool(1002, "保存", wxArtProvider::GetBitmap(wxART_FILE_SAVE));
+    toolbar->AddTool(1003, "导出成PDF", wxArtProvider::GetBitmap(wxART_FILE_SAVE_AS));
+    toolbar->AddTool(1004, "清除", wxArtProvider::GetBitmap(wxART_DELETE));
+    toolbar->AddTool(1005, "画非门", wxArtProvider::GetBitmap(wxART_TIP));
+    toolbar->AddTool(1006, "画或门", wxArtProvider::GetBitmap(wxART_GO_DOWN));
+    toolbar->AddTool(1007, "画与门", wxArtProvider::GetBitmap(wxART_TIP));
+    toolbar->AddTool(1008, "撤销", wxArtProvider::GetBitmap(wxART_UNDO));
+    toolbar->AddTool(1009, "连线", wxArtProvider::GetBitmap(wxART_TIP));
     toolbar->Realize();
 
     wxMenu* menuFile = new wxMenu;
-    menuFile->Append(1001, "Import CAD File\tCtrl-I", "Import CAD format files");
-    menuFile->Append(1002, "Save\tCtrl-S", "Save the project");
-    menuFile->Append(1003, "Export to PDF\tCtrl-E", "Export the project as a PDF");
-    menuFile->Append(1004, "Clear Canvas\tCtrl-L", "Clear the drawing canvas");
-    menuFile->Append(1005, "Draw Rectangle\tCtrl-R", "Draw a rectangle on the canvas");
-    menuFile->Append(1006, "Draw Circle\tCtrl-C", "Draw a circle on the canvas");
-    menuFile->Append(1007, "Draw Line\tCtrl-L", "Draw a line on the canvas");
-    menuFile->Append(1008, "Undo\tCtrl-Z", "Undo the last drawing operation");
-    menuFile->Append(wxID_EXIT, "Exit\tCtrl-Q", "Close the application");
+    menuFile->Append(1001, "导出成CAD\tCtrl-I", "导出成CAD格式的文件");
+    menuFile->Append(1002, "保存\tCtrl-S", "保存这个项目");
+    menuFile->Append(1003, "导出成PDF\tCtrl-E", "将文件导出成PDF格式");
+    menuFile->Append(1004, "清除\tCtrl-L", "清除整个画板");
+    menuFile->Append(1005, "画非门\tCtrl-R", "将非门画在画板上");
+    menuFile->Append(1006, "画或门\tCtrl-C", "将或门画在画板上");
+    menuFile->Append(1007, "画与门\tCtrl-L", "将与门画在画板上");
+    menuFile->Append(1008, "撤销\tCtrl-Z", "撤销上一步画板操作");
+    menuFile->Append(1009, "连线\tCtrl-K", "在元件之间连线");
+    menuFile->Append(wxID_EXIT, "Exit\tCtrl-Q", "关闭程序");
 
     wxMenu* menuHelp = new wxMenu;
     menuHelp->Append(wxID_ABOUT, "About\tCtrl-A", "Information about this application");
@@ -315,34 +321,44 @@ void MyFrame::OnClearCanvas(wxCommandEvent& event) {
     wxMessageBox("Canvas cleared!", "Info", wxOK | wxICON_INFORMATION);
 }
 
-void MyFrame::OnDrawRectangle(wxCommandEvent& event) {
-    m_drawRectangle = true;
-    m_drawCircle = false;
-    m_drawLine = false;
-    wxMessageBox("Click and drag to draw a rectangle on the canvas.", "Draw Rectangle", wxOK | wxICON_INFORMATION);
+void MyFrame::OnDrawNOT(wxCommandEvent& event) {
+    m_drawNOT = true;
+    m_drawOR = false;
+    m_drawAND = false;
+    m_lianxian = false;
+    wxMessageBox("在画板上点击即可画出非门。", "画非门", wxOK | wxICON_INFORMATION);
 }
 
-void MyFrame::OnDrawCircle(wxCommandEvent& event) {
-    m_drawCircle = true;
-    m_drawLine = false;
-    m_drawRectangle = false;
-    wxMessageBox("Click and drag to draw a circle on the canvas.", "Draw Circle", wxOK | wxICON_INFORMATION);
+void MyFrame::OnDrawOR(wxCommandEvent& event) {
+    m_drawOR = true;
+    m_drawAND = false;
+    m_drawNOT = false;
+    m_lianxian = false;
+    wxMessageBox("在画板上点击即可画出或门。", "画或门", wxOK | wxICON_INFORMATION);
 }
 
-void MyFrame::OnDrawLine(wxCommandEvent& event) {
-    m_drawLine = true;
-    m_drawCircle = false;
-    m_drawRectangle = false;
-    wxMessageBox("Click to set start and end points for the line.", "Draw Line", wxOK | wxICON_INFORMATION);
+void MyFrame::OnDrawAND(wxCommandEvent& event) {
+    m_drawAND = true;
+    m_drawOR = false;
+    m_drawNOT = false;
+    m_lianxian = false;
+    wxMessageBox("在画板上点击即可画出与门。", "画与门", wxOK | wxICON_INFORMATION);
 }
 
+void MyFrame::Onlianxian(wxCommandEvent& event) {
+    m_drawAND = false;
+    m_drawOR = false;
+    m_drawNOT = false;
+    m_lianxian = true;
+    wxMessageBox("点击设置起点，再次点击设置终点，即可连成一条线", "连线", wxOK | wxICON_INFORMATION);
+}
 void MyFrame::OnUndo(wxCommandEvent& event) {
     if (!m_shapes.empty()) {
         m_shapes.pop_back();
         UpdateCanvas();
     }
     else {
-        wxMessageBox("No shapes to undo!", "Info", wxOK | wxICON_INFORMATION);
+        wxMessageBox("没有图形可以撤销", "撤销", wxOK | wxICON_INFORMATION);
     }
 }
 
@@ -370,16 +386,17 @@ void MyFrame::OnMouseUp(wxMouseEvent& event) {
         m_drawing = false;
 
         // 对齐到网格
-        m_startPoint.x = (m_startPoint.x / GRID_SIZE) * GRID_SIZE;
-        m_startPoint.y = (m_startPoint.y / GRID_SIZE) * GRID_SIZE;
-        m_endPoint.x = (m_endPoint.x / GRID_SIZE) * GRID_SIZE;
-        m_endPoint.y = (m_endPoint.y / GRID_SIZE) * GRID_SIZE;
+       // m_startPoint.x = (m_startPoint.x / GRID_SIZE) * GRID_SIZE;
+        //m_startPoint.y = (m_startPoint.y / GRID_SIZE) * GRID_SIZE;
+        //m_endPoint.x = (m_endPoint.x / GRID_SIZE) * GRID_SIZE;
+        //m_endPoint.y = (m_endPoint.y / GRID_SIZE) * GRID_SIZE;
 
-        Shape shape = { m_startPoint, m_endPoint, m_drawCircle, m_drawRectangle };
+        Shape shape = { m_startPoint, m_endPoint, m_drawOR, m_drawNOT,m_lianxian };
 
-        if (m_drawLine) {
-            shape.isCircle = false;
-            shape.isRectangle = false;
+        if (m_drawAND) {
+            shape.isOR = false;
+            shape.isNOT = false;
+            shape.islianxian = false;
         }
 
         m_shapes.push_back(shape);
@@ -403,14 +420,17 @@ void MyFrame::UpdateCanvas() {
         dc.SetBrush(wxBrush(wxColor(0, 0, 255, 128))); // semi-transparent color
         dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
 
-        if (m_drawCircle) {
+        if (m_drawOR) {
             int radius = static_cast<int>(sqrt(pow(m_endPoint.x - m_startPoint.x, 2) + pow(m_endPoint.y - m_startPoint.y, 2)));
             dc.DrawCircle(m_startPoint.x, m_startPoint.y, radius);
         }
-        else if (m_drawLine) {
-            dc.DrawLine(m_startPoint.x, m_startPoint.y, m_endPoint.x, m_endPoint.y);
+        else if (m_lianxian) {
+            dc.DrawLine(m_startPoint.x, m_startPoint.y + 35, m_endPoint.x, m_endPoint.y + 35);
         }
-        else if (m_drawRectangle) {
+        else if (m_drawAND) {
+            dc.DrawSpline(m_startPoint.x, m_startPoint.y, m_startPoint.x + 50, m_startPoint.y + 50, m_startPoint.x, m_startPoint.y + 100);
+        }
+        else if (m_drawNOT) {
             dc.DrawRectangle(m_startPoint.x, m_startPoint.y,
                 m_endPoint.x - m_startPoint.x,
                 m_endPoint.y - m_startPoint.y);
@@ -421,21 +441,50 @@ void MyFrame::UpdateCanvas() {
 }
 
 void MyFrame::DrawShapes(wxMemoryDC& dc) {
-    dc.SetBrush(wxBrush(wxColor(0, 0, 255)));
+
+
+    dc.SetBrush(wxBrush(wxColor(0, 0, 0), wxBRUSHSTYLE_TRANSPARENT));
     dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
 
     for (const auto& shape : m_shapes) {
-        if (shape.isCircle) {
-            int radius = static_cast<int>(sqrt(pow(shape.end.x - shape.start.x, 2) + pow(shape.end.y - shape.start.y, 2)));
-            dc.DrawCircle(shape.start.x, shape.start.y, radius);
+        if (shape.isOR) {
+            dc.DrawArc(shape.start.x, shape.start.y + 57, shape.start.x, shape.start.y + 7, shape.start.x - 10, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 57, shape.start.x + 60, shape.start.y + 57);
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x + 60, shape.start.y + 7);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 57, shape.start.x + 60, shape.start.y + 7, shape.start.x + 50, shape.start.y + 32);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 74, shape.start.y + 32, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y + 42, 2);
+            dc.DrawCircle(shape.start.x + 14, shape.start.y + 22, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
-        else if (shape.isRectangle) {
-            dc.DrawRectangle(shape.start.x, shape.start.y,
-                shape.end.x - shape.start.x,
-                shape.end.y - shape.start.y);
+        else if (shape.isNOT) {
+
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x + 50, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 57, shape.start.x + 50, shape.start.y + 32);
+            dc.DrawLine(shape.start.x, shape.start.y + 7, shape.start.x, shape.start.y + 57);
+            dc.DrawCircle(shape.start.x + 55, shape.start.y + 32, 5);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 60, shape.start.y + 32, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 42, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 22, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
+
+        }
+        else if (shape.islianxian) {
+            dc.DrawLine(shape.start.x, shape.start.y + 35, shape.end.x, shape.end.y + 35);
         }
         else {
-            dc.DrawLine(shape.start.x, shape.start.y, shape.end.x, shape.end.y);
+
+            dc.DrawLine(shape.start.x, shape.start.y + 10, shape.start.x, shape.start.y + 60);
+            dc.DrawLine(shape.start.x, shape.start.y + 10, shape.start.x + 60, shape.start.y + 10);
+            dc.DrawLine(shape.start.x, shape.start.y + 60, shape.start.x + 60, shape.start.y + 60);
+            dc.DrawArc(shape.start.x + 60, shape.start.y + 60, shape.start.x + 60, shape.start.y + 10, shape.start.x + 50, shape.start.y + 35);
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x + 74, shape.start.y + 35, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 45, 2);
+            dc.DrawCircle(shape.start.x, shape.start.y + 25, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
         }
     }
 }
@@ -575,7 +624,7 @@ void SizerPanel::ButtonOr(wxCommandEvent& event, wxFrame* parentFrame)
 void SizerPanel::ButtonNot(wxCommandEvent& event, wxFrame* parentFrame)
 {
     /*ShapedFrame* frame = new ShapedFrame(parentFrame);
-    frame->m_bitmap = wxBitmap("not.png", wxBITMAP_TYPE_PNG);
+    frame->m_bitmap = wxBitmap("not.png", wxBITMAP_TYPE_PNG);'
     frame->SetShape(wxRegion(frame->m_bitmap, *wxWHITE));
     frame->Show();*/
 }
