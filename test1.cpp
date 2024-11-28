@@ -237,7 +237,7 @@ MyFrame::MyFrame(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title), m_canvas(1200, 800), m_drawing(false), m_drawOR(false), m_drawAND(false), m_drawNOT(false) {
 
     wxToolBar* toolbar = CreateToolBar();
-    toolbar->AddTool(1001, "导出成CAD", wxArtProvider::GetBitmap(wxART_FILE_OPEN));
+    toolbar->AddTool(1001, "导入文件", wxArtProvider::GetBitmap(wxART_FILE_OPEN));
     toolbar->AddTool(1002, "保存", wxArtProvider::GetBitmap(wxART_FILE_SAVE));
     toolbar->AddTool(1003, "导出成PDF", wxArtProvider::GetBitmap(wxART_FILE_SAVE_AS));
     toolbar->AddTool(1004, "清除", wxArtProvider::GetBitmap(wxART_DELETE));
@@ -251,7 +251,7 @@ MyFrame::MyFrame(const wxString& title)
     toolbar->Realize();
 
     wxMenu* menuFile = new wxMenu;
-    menuFile->Append(1001, "导出成CAD\tCtrl-I", "导出成CAD格式的文件");
+    menuFile->Append(1001, "导入文件\tCtrl-I", "导入文件");
     menuFile->Append(1002, "保存\tCtrl-S", "保存这个项目");
     menuFile->Append(1003, "导出成PDF\tCtrl-E", "将文件导出成PDF格式");
     menuFile->Append(1004, "清除\tCtrl-L", "清除整个画板");
@@ -292,13 +292,27 @@ MyFrame::MyFrame(const wxString& title)
 }
 
 void MyFrame::OnImportCAD(wxCommandEvent& event) {
-    wxFileDialog openFileDialog(this, "Open CAD File", "", "",
-        "CAD files (*.dwg;*.dxf)|*.dwg;*.dxf",
+    wxFileDialog openFileDialog(this, "Open PNG File", "", "",
+        "PNG files (*.png)|*.png",
         wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
     if (openFileDialog.ShowModal() == wxID_OK) {
         wxString filePath = openFileDialog.GetPath();
-        wxMessageBox("Imported CAD file: " + filePath, "Info", wxOK | wxICON_INFORMATION);
+        wxImage image(filePath);
+        wxMessageBox("Imported PNG file: " + filePath, "Info", wxOK | wxICON_INFORMATION);
+        if (image.IsOk())
+        {
+            // 将wxImage转换为wxBitmap
+            wxBitmap bitmap(image);
+            m_canvas = bitmap; // 假设m_canvas是wxBitmap类型，存储画布内容
+
+            // 刷新画布以显示新的图像
+            Refresh();
+        }
+        else
+        {
+            wxMessageBox("Failed to load the PNG file.", "Error", wxOK | wxICON_ERROR);
+        }
     }
 }
 
@@ -452,7 +466,6 @@ void MyFrame::UpdateCanvas() {
     wxMemoryDC dc(m_canvas);
     dc.SetBackground(wxBrush(GetBackgroundColour()));
     dc.Clear();
-
     // 绘制网格
     DrawGrid(dc);
 
@@ -485,7 +498,9 @@ void MyFrame::UpdateCanvas() {
 }
 
 void MyFrame::DrawShapes(wxMemoryDC& dc) {
-
+    if (m_canvas.IsOk()) {
+        dc.DrawBitmap(m_canvas, 0, 0, true);
+    }
 
     dc.SetBrush(wxBrush(wxColor(0, 0, 0), wxBRUSHSTYLE_TRANSPARENT));
     dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
