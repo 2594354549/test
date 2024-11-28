@@ -40,6 +40,9 @@ private:
     void OnUndo(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnQuit(wxCommandEvent& event);
+    void SaveCanvasAsPNG(const wxString& filename);
+    void OnDraw0(wxCommandEvent& event);
+    void OnDraw1(wxCommandEvent& event);
 
     void OnPaint(wxPaintEvent& event);
     void OnMouseDown(wxMouseEvent& event);
@@ -59,6 +62,8 @@ private:
     bool m_drawAND;
     bool m_drawNOT;
     bool m_lianxian;
+    bool m_draw0;
+    bool m_draw1;
 
     struct Shape {
         wxPoint start;
@@ -66,6 +71,8 @@ private:
         bool isOR;
         bool isNOT;
         bool islianxian;
+        bool is0;
+        bool is1;
     };
 
     std::vector<Shape> m_shapes;
@@ -179,6 +186,8 @@ EVT_MENU(1006, MyFrame::OnDrawOR)
 EVT_MENU(1007, MyFrame::OnDrawAND)
 EVT_MENU(1008, MyFrame::OnUndo)
 EVT_MENU(1009, MyFrame::Onlianxian)
+EVT_MENU(1010, MyFrame::OnDraw0)
+EVT_MENU(1011, MyFrame::OnDraw1)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 EVT_MENU(wxID_EXIT, MyFrame::OnQuit)
 EVT_PAINT(MyFrame::OnPaint)
@@ -237,6 +246,8 @@ MyFrame::MyFrame(const wxString& title)
     toolbar->AddTool(1007, "画与门", wxArtProvider::GetBitmap(wxART_TIP));
     toolbar->AddTool(1008, "撤销", wxArtProvider::GetBitmap(wxART_UNDO));
     toolbar->AddTool(1009, "连线", wxArtProvider::GetBitmap(wxART_TIP));
+    toolbar->AddTool(1010, "画0", wxArtProvider::GetBitmap(wxART_TIP));
+    toolbar->AddTool(1011, "画1", wxArtProvider::GetBitmap(wxART_TIP));
     toolbar->Realize();
 
     wxMenu* menuFile = new wxMenu;
@@ -249,6 +260,8 @@ MyFrame::MyFrame(const wxString& title)
     menuFile->Append(1007, "画与门\tCtrl-L", "将与门画在画板上");
     menuFile->Append(1008, "撤销\tCtrl-Z", "撤销上一步画板操作");
     menuFile->Append(1009, "连线\tCtrl-K", "在元件之间连线");
+    menuFile->Append(1010, "画0\tCtrl-O", "将0画在画板上");
+    menuFile->Append(1011, "画1\tCtrl-N", "将1画在画板上");
     menuFile->Append(wxID_EXIT, "Exit\tCtrl-Q", "关闭程序");
 
     wxMenu* menuHelp = new wxMenu;
@@ -291,11 +304,12 @@ void MyFrame::OnImportCAD(wxCommandEvent& event) {
 
 void MyFrame::OnSave(wxCommandEvent& event) {
     wxFileDialog saveFileDialog(this, "Save File", "", "",
-        "Project files (*.proj)|*.proj",
+        "PNG files (*.png)|*.png",
         wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 
     if (saveFileDialog.ShowModal() == wxID_OK) {
         wxString filePath = saveFileDialog.GetPath();
+        SaveCanvasAsPNG(filePath);
         wxMessageBox("Saved project to: " + filePath, "Info", wxOK | wxICON_INFORMATION);
     }
 }
@@ -326,6 +340,8 @@ void MyFrame::OnDrawNOT(wxCommandEvent& event) {
     m_drawOR = false;
     m_drawAND = false;
     m_lianxian = false;
+    m_draw0 = false;
+    m_draw1 = false;
     wxMessageBox("在画板上点击即可画出非门。", "画非门", wxOK | wxICON_INFORMATION);
 }
 
@@ -334,6 +350,8 @@ void MyFrame::OnDrawOR(wxCommandEvent& event) {
     m_drawAND = false;
     m_drawNOT = false;
     m_lianxian = false;
+    m_draw0 = false;
+    m_draw1 = false;
     wxMessageBox("在画板上点击即可画出或门。", "画或门", wxOK | wxICON_INFORMATION);
 }
 
@@ -342,6 +360,8 @@ void MyFrame::OnDrawAND(wxCommandEvent& event) {
     m_drawOR = false;
     m_drawNOT = false;
     m_lianxian = false;
+    m_draw0 = false;
+    m_draw1 = false;
     wxMessageBox("在画板上点击即可画出与门。", "画与门", wxOK | wxICON_INFORMATION);
 }
 
@@ -350,7 +370,29 @@ void MyFrame::Onlianxian(wxCommandEvent& event) {
     m_drawOR = false;
     m_drawNOT = false;
     m_lianxian = true;
+    m_draw0 = false;
+    m_draw1 = false;
     wxMessageBox("点击设置起点，再次点击设置终点，即可连成一条线", "连线", wxOK | wxICON_INFORMATION);
+}
+void MyFrame::OnDraw0(wxCommandEvent& event)
+{
+    m_drawAND = false;
+    m_drawOR = false;
+    m_drawNOT = false;
+    m_lianxian = false;
+    m_draw0 = true;
+    m_draw1 = false;
+    wxMessageBox("在画板上点击即可画出 0。", "画 0", wxOK | wxICON_INFORMATION);
+}
+void MyFrame::OnDraw1(wxCommandEvent& event)
+{
+    m_drawAND = false;
+    m_drawOR = false;
+    m_drawNOT = false;
+    m_lianxian = false;
+    m_draw0 = false;
+    m_draw1 = true;
+    wxMessageBox("在画板上点击即可画出 1。", "画 1", wxOK | wxICON_INFORMATION);
 }
 void MyFrame::OnUndo(wxCommandEvent& event) {
     if (!m_shapes.empty()) {
@@ -391,12 +433,14 @@ void MyFrame::OnMouseUp(wxMouseEvent& event) {
         //m_endPoint.x = (m_endPoint.x / GRID_SIZE) * GRID_SIZE;
         //m_endPoint.y = (m_endPoint.y / GRID_SIZE) * GRID_SIZE;
 
-        Shape shape = { m_startPoint, m_endPoint, m_drawOR, m_drawNOT,m_lianxian };
+        Shape shape = { m_startPoint, m_endPoint, m_drawOR, m_drawNOT, m_lianxian , m_draw0, m_draw1 };
 
         if (m_drawAND) {
             shape.isOR = false;
             shape.isNOT = false;
             shape.islianxian = false;
+            shape.is0 = false;
+            shape.is1 = false;
         }
 
         m_shapes.push_back(shape);
@@ -474,6 +518,29 @@ void MyFrame::DrawShapes(wxMemoryDC& dc) {
         else if (shape.islianxian) {
             dc.DrawLine(shape.start.x, shape.start.y + 35, shape.end.x, shape.end.y + 35);
         }
+        else if (shape.is0) {
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x, shape.start.y + 35, 10);
+            dc.DrawText('0', shape.start.x - 2.5, shape.start.y + 27);
+            dc.DrawCircle(shape.start.x + 10, shape.start.y + 35, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 25, shape.start.x + 10, shape.start.y + 25);
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 45, shape.start.x + 10, shape.start.y + 45);
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 25, shape.start.x - 10, shape.start.y + 45);
+            dc.DrawLine(shape.start.x + 10, shape.start.y + 25, shape.start.x + 10, shape.start.y + 45);
+        }
+        else if (shape.is1) {
+            dc.SetPen(wxPen(wxColor(255, 0, 0), 2));
+            dc.DrawCircle(shape.start.x, shape.start.y + 35, 10);
+            dc.DrawText('1', shape.start.x - 2.5, shape.start.y + 27);
+            dc.DrawCircle(shape.start.x + 10, shape.start.y + 35, 2);
+            dc.SetPen(wxPen(wxColor(0, 0, 255), 2));
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 25, shape.start.x + 10, shape.start.y + 25);
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 45, shape.start.x + 10, shape.start.y + 45);
+            dc.DrawLine(shape.start.x - 10, shape.start.y + 25, shape.start.x - 10, shape.start.y + 45);
+            dc.DrawLine(shape.start.x + 10, shape.start.y + 25, shape.start.x + 10, shape.start.y + 45);
+
+        }
         else {
 
             dc.DrawLine(shape.start.x, shape.start.y + 10, shape.start.x, shape.start.y + 60);
@@ -500,6 +567,14 @@ void MyFrame::DrawGrid(wxMemoryDC& dc) {
         dc.DrawLine(0, y, m_canvas.GetWidth(), y);
     }
 }
+
+void MyFrame::SaveCanvasAsPNG(const wxString& filename)
+{
+    // 确保m_canvas已经包含了所有绘制的内容
+    m_canvas.SaveFile(filename, wxBITMAP_TYPE_PNG);
+}
+
+
 
 void MyFrame::OnAbout(wxCommandEvent& event) {
     wxMessageBox("This is an industrial design application for CAD management.", "About", wxOK | wxICON_INFORMATION);
@@ -570,6 +645,7 @@ void ShapedFrame::OnMouseMove(wxMouseEvent& event)
         Move(wxPoint(pos.x - m_delta.x, pos.y - m_delta.y));
     }
 }
+
 
 void ShapedFrame::OnExit(wxMouseEvent& event)
 {
